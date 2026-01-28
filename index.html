@@ -249,34 +249,8 @@
                 <p class="text-slate-500 uppercase tracking-widest text-xs">Testimonials</p>
             </div>
 
-            <div class="grid md:grid-cols-2 gap-8">
-                <div class="testimonial-card bg-stone-50 p-8 rounded-3xl border border-stone-100 relative">
-                    <i data-lucide="quote" class="absolute top-6 right-8 text-rose-100 w-12 h-12"></i>
-                    <p class="text-slate-600 italic mb-6 leading-relaxed relative z-10">
-                        "Shoshana was a grounding presence during my pregnancy. Her prenatal massage sessions were the only time I truly felt weightless and relaxed. Her intuition is incredible."
-                    </p>
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-rose-200 rounded-full"></div>
-                        <div>
-                            <p class="font-bold text-slate-900 text-sm">Sarah L.</p>
-                            <p class="text-xs text-slate-500">RBS A</p>
-                        </div>
-                    </div>
-                </div>
-
-                <div class="testimonial-card bg-stone-50 p-8 rounded-3xl border border-stone-100 relative">
-                    <i data-lucide="quote" class="absolute top-6 right-8 text-rose-100 w-12 h-12"></i>
-                    <p class="text-slate-600 italic mb-6 leading-relaxed relative z-10">
-                        "Having Shoshana as my doula was the best decision we made. She provided so much physical and emotional support, making my birth experience feel empowered and safe."
-                    </p>
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-rose-200 rounded-full"></div>
-                        <div>
-                            <p class="font-bold text-slate-900 text-sm">Rivka M.</p>
-                            <p class="text-xs text-slate-500">Bet Shemesh</p>
-                        </div>
-                    </div>
-                </div>
+            <div id="testimonialContainer" class="grid md:grid-cols-2 gap-8">
+                <!-- JavaScript will inject cards here -->
             </div>
         </div>
     </section>
@@ -362,6 +336,50 @@
     </div>
 
     <script>
+        // --- TESTIMONIALS DATA LIST ---
+        // Instead of local files, add your testimonials here.
+        // The website will automatically build the cards on GitHub.
+        const testimonialsData = [
+            {
+                text: "Shoshana was a grounding presence during my pregnancy. Her prenatal massage sessions were the only time I truly felt weightless and relaxed. Her intuition is incredible.",
+                author: "Sarah L.",
+                location: "RBS A"
+            },
+            {
+                text: "Having Shoshana as my doula was the best decision we made. She provided so much physical and emotional support, making my birth experience feel empowered and safe.",
+                author: "Rivka M.",
+                location: "Bet Shemesh"
+            }
+            // To add a new one, copy the format above and paste it here!
+        ];
+
+        function loadTestimonials() {
+            const container = document.getElementById('testimonialContainer');
+            if (!container) return;
+
+            testimonialsData.forEach(item => {
+                const card = document.createElement('div');
+                card.className = 'testimonial-card bg-stone-50 p-8 rounded-3xl border border-stone-100 relative';
+                card.innerHTML = `
+                    <i data-lucide="quote" class="absolute top-6 right-8 text-rose-100 w-12 h-12"></i>
+                    <p class="text-slate-600 italic mb-6 leading-relaxed relative z-10">
+                        "${item.text}"
+                    </p>
+                    <div class="flex items-center gap-4">
+                        <div class="w-10 h-10 bg-rose-200 rounded-full"></div>
+                        <div>
+                            <p class="font-bold text-slate-900 text-sm">${item.author}</p>
+                            <p class="text-xs text-slate-500">${item.location}</p>
+                        </div>
+                    </div>
+                `;
+                container.appendChild(card);
+            });
+        }
+
+        // Run the loader
+        loadTestimonials();
+
         // Initialize Lucide Icons
         lucide.createIcons();
 
@@ -373,15 +391,10 @@
             const email = document.getElementById('userEmail').value;
             const msg = document.getElementById('userMessage').value;
 
-            // Prepare WhatsApp message including phone and email
             const whatsappMsg = `Hi Shoshana! My name is ${name}.\nInterest: ${interest}\nPhone: ${phone}\nEmail: ${email}\n\nMessage: ${msg}`;
             const whatsappUrl = `https://api.whatsapp.com/send?phone=972542423787&text=${encodeURIComponent(whatsappMsg)}`;
 
-            // Open WhatsApp immediately
             window.open(whatsappUrl, '_blank');
-
-            // Formspree (action="https://formspree.io/f/xqebkwnv") will handle the 
-            // email submission automatically when the form finishes submitting.
             showAlert('Opening WhatsApp and sending email backup...');
         });
 
@@ -395,7 +408,6 @@
             }, 4000);
         }
 
-        // Scroll animations
         const observerOptions = { threshold: 0.1 };
         const observer = new IntersectionObserver((entries) => {
             entries.forEach(entry => {

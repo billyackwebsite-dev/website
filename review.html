@@ -70,15 +70,18 @@
     </main>
 
     <script type="module">
-        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
-        import { getFirestore, collection, doc, getDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
+        import { getFirestore, collection, doc, getDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
 
         // Use the same Firebase project config as admin.html.
         const firebaseConfig = {
-            apiKey: 'YOUR_FIREBASE_API_KEY',
-            authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
-            projectId: 'YOUR_PROJECT_ID',
-            appId: 'YOUR_FIREBASE_APP_ID'
+            apiKey: 'AIzaSyA9w_-Omp4W3k1c8syqaCn6LiS29RvFyT0',
+            authDomain: 'billyack-com.firebaseapp.com',
+            projectId: 'billyack-com',
+            storageBucket: 'billyack-com.firebasestorage.app',
+            messagingSenderId: '979011586766',
+            appId: '1:979011586766:web:42fba76069380bd0309e9f',
+            measurementId: 'G-CTC6GPPNQ6'
         };
         const configIsReady = Object.values(firebaseConfig).every(value => value && !value.includes('YOUR_'));
         const token = new URLSearchParams(window.location.search).get('token');

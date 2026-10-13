@@ -152,6 +152,7 @@
         const inviteLink = document.getElementById('inviteLink');
         const reviewsStatus = document.getElementById('reviewsStatus');
         const reviewList = document.getElementById('reviewList');
+        let db;
 
         function setStatus(element, message, type = '') {
             element.textContent = message;
@@ -274,7 +275,7 @@
         } else {
             const app = initializeApp(firebaseConfig);
             const auth = getAuth(app);
-            const db = getFirestore(app);
+            db = getFirestore(app);
 
             onAuthStateChanged(auth, async user => {
                 if (user && user.uid !== ADMIN_UID) {

@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Share Your Experience | Shoshana Billyack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #253238;
+            --muted: #69777b;
+            --rose: #963e58;
+            --rose-dark: #743248;
+            --rose-pale: #f8edef;
+            --paper: #fbf8f5;
+            --line: #e8e1de;
+            --white: #fff;
+            --error: #a33333;
+            --success: #287254;
+        }
+        * { box-sizing: border-box; }
+        body { display: grid; min-height: 100vh; place-items: center; margin: 0; padding: 2rem 1rem; background: radial-gradient(ellipse at 15% 8%, #f5e5e2 0, transparent 34%), var(--paper); color: var(--ink); font: 15px/1.65 'Plus Jakarta Sans', sans-serif; }
+        main { width: min(620px, 100%); padding: clamp(1.4rem, 6vw, 3.25rem); background: var(--white); border: 1px solid var(--line); border-radius: 8px; box-shadow: 0 18px 55px #50352b12; }
+        .brand { margin: 0 0 2rem; color: var(--rose-dark); font: 1.05rem 'Marcellus', serif; }
+        h1, h2 { font-family: 'Marcellus', serif; font-weight: 400; line-height: 1.22; }
+        h1 { margin: 0 0 .75rem; font-size: clamp(2rem, 7vw, 3rem); }
+        .intro { margin: 0 0 1.7rem; color: var(--muted); }
+        .field { display: grid; gap: .45rem; margin: 1rem 0; }
+        label { font-size: .85rem; font-weight: 700; }
+        input, textarea { width: 100%; padding: .8rem .9rem; border: 1px solid #d9d1ce; border-radius: 5px; background: var(--white); color: var(--ink); font: inherit; }
+        input:focus, textarea:focus { outline: 3px solid #963e5826; border-color: var(--rose); }
+        textarea { min-height: 180px; resize: vertical; }
+        .button { width: 100%; min-height: 48px; margin-top: .65rem; padding: .75rem 1rem; border: 0; border-radius: 5px; background: var(--rose); color: var(--white); font: 600 1rem 'Plus Jakarta Sans', sans-serif; cursor: pointer; transition: background .18s ease; }
+        .button:hover { background: var(--rose-dark); }
+        .button:disabled { cursor: wait; opacity: .65; }
+        .status { margin: 1rem 0 0; color: var(--muted); }
+        .status.error { color: var(--error); }
+        .status.success { color: var(--success); }
+        .thanks { padding: 1rem; border-radius: 5px; background: var(--rose-pale); }
+        [hidden] { display: none !important; }
+    </style>
+</head>
+<body>
+    <main>
+        <p class="brand">Shoshana Billyack · Wellness & Doula Care</p>
+        <section id="messagePanel" aria-live="polite">
+            <h1 id="pageHeading">A few kind words</h1>
+            <p class="intro" id="pageIntro">Your experience can help another person feel supported on their journey.</p>
+            <p class="status" id="pageStatus" role="status">Checking your invitation…</p>
+        </section>
+        <form id="reviewForm" hidden>
+            <div class="field">
+                <label for="author">Your name</label>
+                <input id="author" name="author" type="text" maxlength="100" autocomplete="name" required>
+            </div>
+            <div class="field">
+                <label for="location">Location <span style="font-weight:400;color:#69777b">(optional)</span></label>
+                <input id="location" name="location" type="text" maxlength="100" autocomplete="address-level2">
+            </div>
+            <div class="field">
+                <label for="text">Your testimonial</label>
+                <textarea id="text" name="text" maxlength="3000" required></textarea>
+            </div>
+            <button class="button" id="submitButton" type="submit">Submit your review</button>
+        </form>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getFirestore, collection, doc, getDoc, runTransaction, serverTimestamp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        // Use the same Firebase project config as admin.html.
+        const firebaseConfig = {
+            apiKey: 'YOUR_FIREBASE_API_KEY',
+            authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
+            projectId: 'YOUR_PROJECT_ID',
+            appId: 'YOUR_FIREBASE_APP_ID'
+        };
+        const configIsReady = Object.values(firebaseConfig).every(value => value && !value.includes('YOUR_'));
+        const token = new URLSearchParams(window.location.search).get('token');
+        const reviewForm = document.getElementById('reviewForm');
+        const pageHeading = document.getElementById('pageHeading');
+        const pageIntro = document.getElementById('pageIntro');
+        const pageStatus = document.getElementById('pageStatus');
+        const invalidMessage = 'This link is invalid or has already been used.';
+
+        function setStatus(message, type = '') {
+            pageStatus.textContent = message;
+            pageStatus.className = `status ${type}`.trim();
+        }
+
+        function showInvalidLink() {
+            reviewForm.hidden = true;
+            pageHeading.textContent = 'Invitation unavailable';
+            pageIntro.textContent = '';
+            setStatus(invalidMessage, 'error');
+        }
+
+        if (!token || !configIsReady) {
+            if (!configIsReady) setStatus('This review page is not configured yet.', 'error');
+            else showInvalidLink();
+        } else {
+            const app = initializeApp(firebaseConfig);
+            const db = getFirestore(app);
+            const tokenRef = doc(db, 'review_tokens', token);
+
+            try {
+                const tokenSnapshot = await getDoc(tokenRef);
+                if (!tokenSnapshot.exists() || tokenSnapshot.data().used !== false || tokenSnapshot.data().token !== token) {
+                    showInvalidLink();
+                } else {
+                    pageStatus.hidden = true;
+                    reviewForm.hidden = false;
+                }
+            } catch (error) {
+                console.error(error);
+                showInvalidLink();
+            }
+
+            reviewForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                const submitButton = document.getElementById('submitButton');
+                submitButton.disabled = true;
+                setStatus('Submitting your review…');
+                pageStatus.hidden = false;
+                try {
+                    const testimonialRef = doc(collection(db, 'testimonials'));
+                    await runTransaction(db, async transaction => {
+                        const currentToken = await transaction.get(tokenRef);
+                        if (!currentToken.exists() || currentToken.data().used !== false || currentToken.data().token !== token) {
+                            throw new Error(invalidMessage);
+                        }
+                        transaction.set(testimonialRef, {
+                            text: document.getElementById('text').value.trim(),
+                            author: document.getElementById('author').value.trim(),
+                            location: document.getElementById('location').value.trim(),
+                            reviewTokenId: token,
+                            createdAt: serverTimestamp()
+                        });
+                        transaction.update(tokenRef, { used: true, submittedReviewId: testimonialRef.id });
+                    });
+                    reviewForm.hidden = true;
+                    pageHeading.textContent = 'Thank you';
+                    pageIntro.textContent = '';
+                    setStatus('Your review has been received. Thank you for sharing your experience.', 'success');
+                } catch (error) {
+                    console.error(error);
+                    if (error.message === invalidMessage) {
+                        showInvalidLink();
+                    } else {
+                        setStatus('We could not submit your review. Please check your connection and try again.', 'error');
+                        submitButton.disabled = false;
+                    }
+                }
+            });
+        }
+    </script>
+</body>
+</html>

@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <title>Testimonials Admin | Shoshana Billyack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #253238;
+            --muted: #69777b;
+            --rose: #963e58;
+            --rose-dark: #743248;
+            --rose-pale: #f8edef;
+            --paper: #fbf8f5;
+            --line: #e8e1de;
+            --white: #fff;
+            --error: #a33333;
+            --success: #287254;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); font: 15px/1.6 'Plus Jakarta Sans', sans-serif; }
+        button, input, textarea { font: inherit; }
+        button { cursor: pointer; }
+        .topbar { display: flex; align-items: center; justify-content: space-between; gap: 1rem; padding: 1.1rem max(1.25rem, calc((100vw - 1080px) / 2)); background: var(--white); border-bottom: 1px solid var(--line); }
+        .brand { color: var(--rose-dark); font: 1.2rem 'Marcellus', serif; text-decoration: none; }
+        .topbar-note { color: var(--muted); font-size: .8rem; }
+        main { width: min(920px, calc(100% - 2rem)); margin: 3.25rem auto 5rem; }
+        h1, h2 { font-family: 'Marcellus', serif; font-weight: 400; line-height: 1.2; }
+        h1 { margin: 0 0 .45rem; font-size: clamp(2rem, 5vw, 3rem); }
+        h2 { margin: 0; font-size: 1.5rem; }
+        .intro { margin: 0 0 2rem; color: var(--muted); }
+        .section { margin-top: 1.25rem; padding: clamp(1.25rem, 4vw, 2rem); background: var(--white); border: 1px solid var(--line); border-radius: 8px; }
+        .section-heading { display: flex; align-items: center; justify-content: space-between; gap: 1rem; margin-bottom: 1.25rem; }
+        .button { display: inline-flex; align-items: center; justify-content: center; min-height: 42px; padding: .62rem 1rem; border: 1px solid transparent; border-radius: 5px; background: var(--rose); color: var(--white); font-weight: 600; text-decoration: none; transition: background .18s ease, border-color .18s ease; }
+        .button:hover { background: var(--rose-dark); }
+        .button.secondary { background: var(--white); border-color: var(--line); color: var(--ink); }
+        .button.secondary:hover { border-color: var(--rose); color: var(--rose-dark); }
+        .button:disabled { cursor: wait; opacity: .65; }
+        .button-row { display: flex; flex-wrap: wrap; gap: .65rem; }
+        .field { display: grid; gap: .4rem; margin: 1rem 0; }
+        label { font-size: .83rem; font-weight: 700; }
+        input, textarea { width: 100%; padding: .75rem .85rem; border: 1px solid #d9d1ce; border-radius: 5px; background: var(--white); color: var(--ink); }
+        input:focus, textarea:focus { outline: 3px solid #963e5826; border-color: var(--rose); }
+        textarea { min-height: 120px; resize: vertical; }
+        .login { max-width: 440px; }
+        .status { min-height: 1.5rem; margin: .65rem 0 0; color: var(--muted); font-size: .9rem; }
+        .status.error { color: var(--error); }
+        .status.success { color: var(--success); }
+        .invite-result { overflow-wrap: anywhere; margin-top: 1rem; padding: .9rem; background: var(--rose-pale); border-radius: 5px; }
+        .invite-result a { color: var(--rose-dark); }
+        .review-list { display: grid; gap: .8rem; }
+        .review-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: start; padding: 1rem; border: 1px solid var(--line); border-radius: 6px; }
+        .review-item p { margin: .35rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+        .review-meta { color: var(--muted); font-size: .84rem; }
+        .edit-form { grid-column: 1 / -1; padding-top: .4rem; }
+        [hidden] { display: none !important; }
+        @media (max-width: 560px) {
+            .topbar { align-items: flex-start; flex-direction: column; }
+            main { margin-top: 2rem; }
+            .section-heading { align-items: flex-start; flex-direction: column; }
+            .review-item { grid-template-columns: 1fr; }
+            .review-item > .button { justify-self: start; }
+        }
+    </style>
+</head>
+<body>
+    <header class="topbar">
+        <a class="brand" href="index.html">Shoshana Billyack</a>
+        <span class="topbar-note">Private testimonials dashboard</span>
+        <button class="button secondary" id="signOutButton" type="button" hidden>Sign out</button>
+    </header>
+
+    <main>
+        <h1>Testimonials</h1>
+        <p class="intro">Manage client kind words and create one-time review invitations.</p>
+
+        <section class="section login" id="loginSection" aria-labelledby="loginHeading">
+            <h2 id="loginHeading">Admin sign in</h2>
+            <form id="loginForm">
+                <div class="field">
+                    <label for="email">Email</label>
+                    <input id="email" name="email" type="email" autocomplete="username" required>
+                </div>
+                <div class="field">
+                    <label for="password">Password</label>
+                    <input id="password" name="password" type="password" autocomplete="current-password" required>
+                </div>
+                <button class="button" type="submit">Sign in</button>
+                <p class="status" id="loginStatus" role="status"></p>
+            </form>
+        </section>
+
+        <div id="dashboard" hidden>
+            <section class="section" aria-labelledby="inviteHeading">
+                <div class="section-heading">
+                    <div>
+                        <h2 id="inviteHeading">Review invitation</h2>
+                        <p class="review-meta">Each invitation can be submitted once.</p>
+                    </div>
+                    <button class="button" id="generateButton" type="button">Generate Invite Link</button>
+                </div>
+                <p class="status" id="inviteStatus" role="status"></p>
+                <div class="invite-result" id="inviteResult" hidden>
+                    <a id="inviteLink" target="_blank" rel="noopener noreferrer"></a>
+                    <div class="button-row" style="margin-top:.75rem">
+                        <button class="button secondary" id="copyLinkButton" type="button">Copy link</button>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section" aria-labelledby="reviewsHeading">
+                <div class="section-heading">
+                    <h2 id="reviewsHeading">Published testimonials</h2>
+                    <button class="button secondary" id="refreshButton" type="button">Refresh</button>
+                </div>
+                <p class="status" id="reviewsStatus" role="status"></p>
+                <div class="review-list" id="reviewList"></div>
+            </section>
+        </div>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js';
+        import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js';
+        import { getFirestore, collection, doc, getDocs, runTransaction, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js';
+
+        // Replace these Firebase Console values and ADMIN_UID before deployment.
+        const firebaseConfig = {
+            apiKey: 'YOUR_FIREBASE_API_KEY',
+            authDomain: 'YOUR_PROJECT_ID.firebaseapp.com',
+            projectId: 'YOUR_PROJECT_ID',
+            appId: 'YOUR_FIREBASE_APP_ID'
+        };
+        const ADMIN_UID = 'REPLACE_WITH_ADMIN_AUTH_UID';
+        const configIsReady = Object.values(firebaseConfig).every(value => value && !value.includes('YOUR_')) && !ADMIN_UID.includes('REPLACE_');
+
+        const loginSection = document.getElementById('loginSection');
+        const loginForm = document.getElementById('loginForm');
+        const loginStatus = document.getElementById('loginStatus');
+        const dashboard = document.getElementById('dashboard');
+        const signOutButton = document.getElementById('signOutButton');
+        const inviteStatus = document.getElementById('inviteStatus');
+        const inviteResult = document.getElementById('inviteResult');
+        const inviteLink = document.getElementById('inviteLink');
+        const reviewsStatus = document.getElementById('reviewsStatus');
+        const reviewList = document.getElementById('reviewList');
+
+        function setStatus(element, message, type = '') {
+            element.textContent = message;
+            element.className = `status ${type}`.trim();
+        }
+
+        function showError(error) {
+            console.error(error);
+            return error?.message || 'Something went wrong. Please try again.';
+        }
+
+        function makeToken() {
+            const bytes = crypto.getRandomValues(new Uint8Array(32));
+            return Array.from(bytes, byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        function makeField(labelText, value, name, multiline = false) {
+            const wrapper = document.createElement('div');
+            wrapper.className = 'field';
+            const label = document.createElement('label');
+            label.textContent = labelText;
+            const input = document.createElement(multiline ? 'textarea' : 'input');
+            input.name = name;
+            input.value = value;
+            input.required = true;
+            label.htmlFor = name;
+            input.id = name;
+            wrapper.append(label, input);
+            return wrapper;
+        }
+
+        function renderTestimonials(items) {
+            reviewList.replaceChildren();
+            if (items.length === 0) {
+                setStatus(reviewsStatus, 'No testimonials found in Firestore yet.');
+                return;
+            }
+            setStatus(reviewsStatus, `${items.length} testimonial${items.length === 1 ? '' : 's'}.`);
+
+            for (const item of items) {
+                const article = document.createElement('article');
+                article.className = 'review-item';
+                const copy = document.createElement('div');
+                const text = document.createElement('p');
+                text.textContent = item.text || '';
+                const meta = document.createElement('div');
+                meta.className = 'review-meta';
+                meta.textContent = [item.author, item.location].filter(Boolean).join(' · ') || 'Anonymous';
+                copy.append(text, meta);
+
+                const editButton = document.createElement('button');
+                editButton.className = 'button secondary';
+                editButton.type = 'button';
+                editButton.textContent = 'Edit';
+                editButton.addEventListener('click', () => openEditor(article, item));
+                article.append(copy, editButton);
+                reviewList.append(article);
+            }
+        }
+
+        function openEditor(article, item) {
+            const form = document.createElement('form');
+            form.className = 'edit-form';
+            form.append(
+                makeField('Testimonial', item.text || '', 'testimonial-text', true),
+                makeField('Client name', item.author || '', 'testimonial-author'),
+                makeField('Location', item.location || '', 'testimonial-location')
+            );
+            const actions = document.createElement('div');
+            actions.className = 'button-row';
+            const saveButton = document.createElement('button');
+            saveButton.className = 'button';
+            saveButton.type = 'submit';
+            saveButton.textContent = 'Save changes';
+            const cancelButton = document.createElement('button');
+            cancelButton.className = 'button secondary';
+            cancelButton.type = 'button';
+            cancelButton.textContent = 'Cancel';
+            cancelButton.addEventListener('click', () => loadTestimonials());
+            const formStatus = document.createElement('p');
+            formStatus.className = 'status';
+            formStatus.setAttribute('role', 'status');
+            actions.append(saveButton, cancelButton);
+            form.append(actions, formStatus);
+            article.append(form);
+
+            form.addEventListener('submit', async event => {
+                event.preventDefault();
+                saveButton.disabled = true;
+                try {
+                    await updateDoc(doc(db, 'testimonials', item.id), {
+                        text: form.elements['testimonial-text'].value.trim(),
+                        author: form.elements['testimonial-author'].value.trim(),
+                        location: form.elements['testimonial-location'].value.trim(),
+                        updatedAt: serverTimestamp()
+                    });
+                    await loadTestimonials();
+                } catch (error) {
+                    setStatus(formStatus, showError(error), 'error');
+                    saveButton.disabled = false;
+                }
+            });
+        }
+
+        async function loadTestimonials() {
+            setStatus(reviewsStatus, 'Loading testimonials…');
+            try {
+                const snapshot = await getDocs(collection(db, 'testimonials'));
+                const items = snapshot.docs.map(testimonial => ({ id: testimonial.id, ...testimonial.data() }));
+                items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+                renderTestimonials(items);
+            } catch (error) {
+                setStatus(reviewsStatus, showError(error), 'error');
+            }
+        }
+
+        if (!configIsReady) {
+            setStatus(loginStatus, 'Add your Firebase config and admin UID in this file before use.', 'error');
+            loginForm.querySelector('button[type="submit"]').disabled = true;
+        } else {
+            const app = initializeApp(firebaseConfig);
+            const auth = getAuth(app);
+            const db = getFirestore(app);
+
+            onAuthStateChanged(auth, async user => {
+                if (user && user.uid !== ADMIN_UID) {
+                    setStatus(loginStatus, 'This account is not authorized to use the admin dashboard.', 'error');
+                    await signOut(auth);
+                    return;
+                }
+                loginSection.hidden = Boolean(user);
+                dashboard.hidden = !user;
+                signOutButton.hidden = !user;
+                if (user) await loadTestimonials();
+            });
+
+            loginForm.addEventListener('submit', async event => {
+                event.preventDefault();
+                const submitButton = loginForm.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                setStatus(loginStatus, 'Signing in…');
+                try {
+                    await signInWithEmailAndPassword(auth, loginForm.elements.email.value, loginForm.elements.password.value);
+                } catch (error) {
+                    setStatus(loginStatus, showError(error), 'error');
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
+
+            signOutButton.addEventListener('click', () => signOut(auth));
+            document.getElementById('refreshButton').addEventListener('click', loadTestimonials);
+
+            document.getElementById('generateButton').addEventListener('click', async event => {
+                const button = event.currentTarget;
+                button.disabled = true;
+                inviteResult.hidden = true;
+                setStatus(inviteStatus, 'Creating a secure invitation…');
+                try {
+                    let token;
+                    for (let attempt = 0; attempt < 3; attempt += 1) {
+                        token = makeToken();
+                        const tokenRef = doc(db, 'review_tokens', token);
+                        const created = await runTransaction(db, async transaction => {
+                            const existing = await transaction.get(tokenRef);
+                            if (existing.exists()) return false;
+                            transaction.set(tokenRef, { token, used: false, createdAt: serverTimestamp() });
+                            return true;
+                        });
+                        if (created) break;
+                        token = null;
+                    }
+                    if (!token) throw new Error('Could not create a unique token. Please try again.');
+                    const url = new URL('review.html', window.location.href);
+                    url.searchParams.set('token', token);
+                    inviteLink.href = url.href;
+                    inviteLink.textContent = url.href;
+                    inviteResult.hidden = false;
+                    setStatus(inviteStatus, 'Invitation created.', 'success');
+                } catch (error) {
+                    setStatus(inviteStatus, showError(error), 'error');
+                } finally {
+                    button.disabled = false;
+                }
+            });
+
+            document.getElementById('copyLinkButton').addEventListener('click', async event => {
+                try {
+                    await navigator.clipboard.writeText(inviteLink.href);
+                    event.currentTarget.textContent = 'Copied';
+                } catch (error) {
+                    setStatus(inviteStatus, 'Clipboard access was blocked. Select and copy the link above.', 'error');
+                }
+            });
+        }
+    </script>
+</body>
+</html>

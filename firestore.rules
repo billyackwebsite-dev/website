@@ -1,0 +1,53 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAdmin() {
+      return request.auth != null
+        && request.auth.uid == 'REPLACE_WITH_ADMIN_AUTH_UID';
+    }
+
+    match /testimonials/{testimonialId} {
+      allow get, list: if isAdmin();
+      allow update: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'text', 'author', 'location', 'createdAt', 'updatedAt', 'reviewTokenId'
+        ]);
+      allow create: if request.resource.data.keys().hasOnly([
+          'text', 'author', 'location', 'createdAt', 'reviewTokenId'
+        ])
+        && request.resource.data.text is string
+        && request.resource.data.text.size() > 0
+        && request.resource.data.text.size() <= 3000
+        && request.resource.data.author is string
+        && request.resource.data.author.size() > 0
+        && request.resource.data.author.size() <= 100
+        && request.resource.data.location is string
+        && request.resource.data.location.size() <= 100
+        && request.resource.data.reviewTokenId is string
+        && request.resource.data.createdAt == request.time
+        && get(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.used == false
+        && getAfter(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.used == true
+        && getAfter(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.submittedReviewId == testimonialId;
+      allow delete: if isAdmin();
+    }
+
+    match /review_tokens/{tokenId} {
+      allow get: if isAdmin() || resource.data.used == false;
+      allow list: if isAdmin();
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly(['token', 'used', 'createdAt'])
+        && request.resource.data.token == tokenId
+        && request.resource.data.used == false
+        && request.resource.data.createdAt == request.time;
+      allow update: if resource.data.used == false
+        && request.resource.data.token == resource.data.token
+        && request.resource.data.createdAt == resource.data.createdAt
+        && request.resource.data.used == true
+        && request.resource.data.submittedReviewId is string
+        && request.resource.data.keys().hasOnly(['token', 'used', 'createdAt', 'submittedReviewId'])
+        && existsAfter(/databases/$(database)/documents/testimonials/$(request.resource.data.submittedReviewId))
+        && getAfter(/databases/$(database)/documents/testimonials/$(request.resource.data.submittedReviewId)).data.reviewTokenId == tokenId;
+      allow delete: if isAdmin();
+    }
+  }
+}

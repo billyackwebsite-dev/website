@@ -7,27 +7,41 @@ service cloud.firestore {
     }
 
     match /testimonials/{testimonialId} {
-      allow get, list: if isAdmin();
+      allow get, list: if true;
       allow update: if isAdmin()
         && request.resource.data.keys().hasOnly([
           'text', 'author', 'location', 'createdAt', 'updatedAt', 'reviewTokenId'
         ]);
-      allow create: if request.resource.data.keys().hasOnly([
-          'text', 'author', 'location', 'createdAt', 'reviewTokenId'
-        ])
-        && request.resource.data.text is string
-        && request.resource.data.text.size() > 0
-        && request.resource.data.text.size() <= 3000
-        && request.resource.data.author is string
-        && request.resource.data.author.size() > 0
-        && request.resource.data.author.size() <= 100
-        && request.resource.data.location is string
-        && request.resource.data.location.size() <= 100
-        && request.resource.data.reviewTokenId is string
-        && request.resource.data.createdAt == request.time
-        && get(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.used == false
-        && getAfter(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.used == true
-        && getAfter(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.submittedReviewId == testimonialId;
+      allow create: if (
+          isAdmin()
+          && request.resource.data.keys().hasOnly(['text', 'author', 'location', 'createdAt'])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 3000
+          && request.resource.data.author is string
+          && request.resource.data.author.size() > 0
+          && request.resource.data.author.size() <= 100
+          && request.resource.data.location is string
+          && request.resource.data.location.size() <= 100
+          && request.resource.data.createdAt == request.time
+        ) || (
+          request.resource.data.keys().hasOnly([
+            'text', 'author', 'location', 'createdAt', 'reviewTokenId'
+          ])
+          && request.resource.data.text is string
+          && request.resource.data.text.size() > 0
+          && request.resource.data.text.size() <= 3000
+          && request.resource.data.author is string
+          && request.resource.data.author.size() > 0
+          && request.resource.data.author.size() <= 100
+          && request.resource.data.location is string
+          && request.resource.data.location.size() <= 100
+          && request.resource.data.reviewTokenId is string
+          && request.resource.data.createdAt == request.time
+          && get(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.used == false
+          && getAfter(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.used == true
+          && getAfter(/databases/$(database)/documents/review_tokens/$(request.resource.data.reviewTokenId)).data.submittedReviewId == testimonialId
+        );
       allow delete: if isAdmin();
     }
 

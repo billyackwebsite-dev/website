@@ -335,56 +335,62 @@
         <span id="notification-text" class="text-sm font-medium"></span>
     </div>
 
-    <script>
-        // --- TESTIMONIALS DATA LIST ---
-        // Instead of local files, add your testimonials here.
-        // The website will automatically build the cards on GitHub.
-        const testimonialsData = [
-            {
-                text: "Shoshana was a grounding presence during my pregnancy. Her prenatal massage sessions were the only time I truly felt weightless and relaxed. Her intuition is incredible.",
-                author: "Sarah L.",
-                location: "RBS A"
-            },
-            {
-                text: "Having Shoshana as my doula was the best decision we made. She provided so much physical and emotional support, making my birth experience feel empowered and safe.",
-                author: "Rivka M.",
-                location: "Bet Shemesh b"
-            },
-            {
-                text: "Having Shoshana as my doula was the best decision we made. She provided so much physical and emotional support, making my birth experience feel empowered and safe.",
-                author: "Rivka M.",
-                location: "Bet Shemesh b"
-            },
-            {
-                text: "Having Shoshana as my doula was the best decision we made. She provided so much physical and emotional support, making my birth experience feel empowered and safe.",
-                author: "Rivka M.",
-                location: "Bet Shemesh b"
-            }
-            // To add a new one, copy the format above and paste it here!
-        ];
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
 
-        function loadTestimonials() {
+        const firebaseConfig = {
+            apiKey: 'AIzaSyA9w_-Omp4W3k1c8syqaCn6LiS29RvFyT0',
+            authDomain: 'billyack-com.firebaseapp.com',
+            projectId: 'billyack-com',
+            storageBucket: 'billyack-com.firebasestorage.app',
+            messagingSenderId: '979011586766',
+            appId: '1:979011586766:web:42fba76069380bd0309e9f',
+            measurementId: 'G-CTC6GPPNQ6'
+        };
+        const testimonialsDb = getFirestore(initializeApp(firebaseConfig));
+
+        async function loadTestimonials() {
             const container = document.getElementById('testimonialContainer');
             if (!container) return;
 
-            testimonialsData.forEach(item => {
-                const card = document.createElement('div');
-                card.className = 'testimonial-card bg-stone-50 p-8 rounded-3xl border border-stone-100 relative';
-                card.innerHTML = `
-                    <i data-lucide="quote" class="absolute top-6 right-8 text-rose-100 w-12 h-12"></i>
-                    <p class="text-slate-600 italic mb-6 leading-relaxed relative z-10">
-                        "${item.text}"
-                    </p>
-                    <div class="flex items-center gap-4">
-                        <div class="w-10 h-10 bg-rose-200 rounded-full"></div>
-                        <div>
-                            <p class="font-bold text-slate-900 text-sm">${item.author}</p>
-                            <p class="text-xs text-slate-500">${item.location}</p>
-                        </div>
-                    </div>
-                `;
-                container.appendChild(card);
-            });
+            container.replaceChildren();
+            try {
+                const snapshot = await getDocs(collection(testimonialsDb, 'testimonials'));
+                const items = snapshot.docs.map(testimonial => testimonial.data());
+                items.sort((a, b) => (b.createdAt?.seconds || 0) - (a.createdAt?.seconds || 0));
+
+                items.forEach(item => {
+                    const card = document.createElement('div');
+                    card.className = 'testimonial-card bg-stone-50 p-8 rounded-3xl border border-stone-100 relative';
+                    const quoteIcon = document.createElement('i');
+                    quoteIcon.setAttribute('data-lucide', 'quote');
+                    quoteIcon.className = 'absolute top-6 right-8 text-rose-100 w-12 h-12';
+                    const text = document.createElement('p');
+                    text.className = 'text-slate-600 italic mb-6 leading-relaxed relative z-10';
+                    text.textContent = `"${item.text || ''}"`;
+                    const authorLine = document.createElement('p');
+                    authorLine.className = 'font-bold text-slate-900 text-sm';
+                    authorLine.textContent = item.author || 'Anonymous';
+                    const locationLine = document.createElement('p');
+                    locationLine.className = 'text-xs text-slate-500';
+                    locationLine.textContent = item.location || '';
+                    const details = document.createElement('div');
+                    details.append(authorLine, locationLine);
+                    const byline = document.createElement('div');
+                    byline.className = 'flex items-center gap-4';
+                    const marker = document.createElement('div');
+                    marker.className = 'w-10 h-10 bg-rose-200 rounded-full';
+                    byline.append(marker, details);
+                    card.append(quoteIcon, text, byline);
+                    container.appendChild(card);
+                    observer.observe(card);
+                });
+                lucide.createIcons();
+            } catch (error) {
+                console.error('Unable to load testimonials:', error);
+                container.textContent = 'Testimonials are temporarily unavailable.';
+            }
         }
 
         // Run the loader

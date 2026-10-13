@@ -113,6 +113,28 @@
                 </div>
             </section>
 
+            <section class="section" aria-labelledby="manualTestimonialHeading">
+                <div class="section-heading">
+                    <h2 id="manualTestimonialHeading">Add a testimonial</h2>
+                </div>
+                <form id="manualTestimonialForm">
+                    <div class="field">
+                        <label for="manualAuthor">Client name</label>
+                        <input id="manualAuthor" name="author" type="text" maxlength="100" required>
+                    </div>
+                    <div class="field">
+                        <label for="manualLocation">Location <span style="font-weight:400;color:#69777b">(optional)</span></label>
+                        <input id="manualLocation" name="location" type="text" maxlength="100">
+                    </div>
+                    <div class="field">
+                        <label for="manualText">Testimonial</label>
+                        <textarea id="manualText" name="text" maxlength="3000" required></textarea>
+                    </div>
+                    <button class="button" type="submit">Add testimonial</button>
+                    <p class="status" id="manualTestimonialStatus" role="status"></p>
+                </form>
+            </section>
+
             <section class="section" aria-labelledby="reviewsHeading">
                 <div class="section-heading">
                     <h2 id="reviewsHeading">Published testimonials</h2>
@@ -127,7 +149,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
-        import { getFirestore, collection, doc, getDocs, runTransaction, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
+        import { getFirestore, addDoc, collection, doc, getDocs, runTransaction, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
 
         // Replace these Firebase Console values and ADMIN_UID before deployment.
         const firebaseConfig = {
@@ -305,6 +327,30 @@
 
             signOutButton.addEventListener('click', () => signOut(auth));
             document.getElementById('refreshButton').addEventListener('click', loadTestimonials);
+
+            document.getElementById('manualTestimonialForm').addEventListener('submit', async event => {
+                event.preventDefault();
+                const form = event.currentTarget;
+                const submitButton = form.querySelector('button[type="submit"]');
+                const status = document.getElementById('manualTestimonialStatus');
+                submitButton.disabled = true;
+                setStatus(status, 'Saving testimonial…');
+                try {
+                    await addDoc(collection(db, 'testimonials'), {
+                        text: form.elements.text.value.trim(),
+                        author: form.elements.author.value.trim(),
+                        location: form.elements.location.value.trim(),
+                        createdAt: serverTimestamp()
+                    });
+                    form.reset();
+                    setStatus(status, 'Testimonial added.', 'success');
+                    await loadTestimonials();
+                } catch (error) {
+                    setStatus(status, showError(error), 'error');
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
 
             document.getElementById('generateButton').addEventListener('click', async event => {
                 const button = event.currentTarget;

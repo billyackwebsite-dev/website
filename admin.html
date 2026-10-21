@@ -4,7 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex, nofollow">
-    <title>Testimonials Admin | Shoshana Billyack</title>
+    <title>Admin Dashboard | Shoshana Billyack</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -55,6 +55,9 @@
         .invite-result a { color: var(--rose-dark); }
         .review-list { display: grid; gap: .8rem; }
         .review-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: start; padding: 1rem; border: 1px solid var(--line); border-radius: 6px; }
+        .appointment-list { display: grid; gap: .8rem; }
+        .appointment-item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1rem; align-items: start; padding: 1rem; border: 1px solid var(--line); border-radius: 6px; }
+        .appointment-item p { margin: .25rem 0; overflow-wrap: anywhere; }
         .review-actions { display: flex; flex-wrap: wrap; gap: .5rem; }
         .review-item p { margin: .35rem 0; white-space: pre-wrap; overflow-wrap: anywhere; }
         .review-meta { color: var(--muted); font-size: .84rem; }
@@ -74,13 +77,13 @@
 <body>
     <header class="topbar">
         <a class="brand" href="index.html">Shoshana Billyack</a>
-        <span class="topbar-note">Private testimonials dashboard</span>
+        <span class="topbar-note">Private admin dashboard</span>
         <button class="button secondary" id="signOutButton" type="button" hidden>Sign out</button>
     </header>
 
     <main>
-        <h1>Testimonials</h1>
-        <p class="intro">Manage client kind words and create one-time review invitations.</p>
+        <h1>Admin dashboard</h1>
+        <p class="intro">Manage appointments, available times, testimonials, and review invitations.</p>
 
         <section class="section login" id="loginSection" aria-labelledby="loginHeading">
             <h2 id="loginHeading">Admin sign in</h2>
@@ -99,6 +102,57 @@
         </section>
 
         <div id="dashboard" hidden>
+            <section class="section" aria-labelledby="slotsHeading">
+                <div class="section-heading">
+                    <div>
+                        <h2 id="slotsHeading">Add an appointment time</h2>
+                        <p class="review-meta">Times are entered and shown in Israel time. Each slot is for one service and one appointment.</p>
+                    </div>
+                </div>
+                <form id="slotForm">
+                    <div class="field">
+                        <label for="slotService">Service</label>
+                        <select id="slotService" name="service" required>
+                            <option value="massage">Massage therapy</option>
+                            <option value="reflexology">Reflexology</option>
+                        </select>
+                    </div>
+                    <div class="field">
+                        <label for="slotStart">Date and start time (Israel time)</label>
+                        <input id="slotStart" name="startAt" type="datetime-local" required>
+                    </div>
+                    <div class="field">
+                        <label for="slotDuration">Duration</label>
+                        <select id="slotDuration" name="durationMinutes" required>
+                            <option value="30">30 minutes</option>
+                            <option value="45">45 minutes</option>
+                            <option value="60">1 hour</option>
+                            <option value="75">75 minutes</option>
+                            <option value="90">90 minutes</option>
+                        </select>
+                    </div>
+                    <button class="button" type="submit">Add available time</button>
+                    <p class="status" id="slotFormStatus" role="status"></p>
+                </form>
+            </section>
+
+            <section class="section" aria-labelledby="appointmentsHeading">
+                <div class="section-heading">
+                    <h2 id="appointmentsHeading">Upcoming appointments</h2>
+                    <button class="button secondary" id="refreshAppointmentsButton" type="button">Refresh</button>
+                </div>
+                <p class="status" id="appointmentsStatus" role="status"></p>
+                <div class="appointment-list" id="appointmentList"></div>
+            </section>
+
+            <section class="section" aria-labelledby="availableSlotsHeading">
+                <div class="section-heading">
+                    <h2 id="availableSlotsHeading">Available times</h2>
+                </div>
+                <p class="status" id="slotsStatus" role="status"></p>
+                <div class="appointment-list" id="slotList"></div>
+            </section>
+
             <section class="section" aria-labelledby="inviteHeading">
                 <div class="section-heading">
                     <div>
@@ -153,7 +207,7 @@
     <script type="module">
         import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
         import { getAuth, onAuthStateChanged, signInWithEmailAndPassword, signOut } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-auth.js';
-        import { getFirestore, addDoc, collection, deleteDoc, doc, getDocs, runTransaction, serverTimestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
+        import { getFirestore, addDoc, collection, deleteDoc, deleteField, doc, getDocs, runTransaction, serverTimestamp, Timestamp, updateDoc } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
 
         // Replace these Firebase Console values and ADMIN_UID before deployment.
         const firebaseConfig = {
@@ -178,7 +232,14 @@
         const inviteLink = document.getElementById('inviteLink');
         const reviewsStatus = document.getElementById('reviewsStatus');
         const reviewList = document.getElementById('reviewList');
+        const slotFormStatus = document.getElementById('slotFormStatus');
+        const appointmentsStatus = document.getElementById('appointmentsStatus');
+        const appointmentList = document.getElementById('appointmentList');
+        const slotsStatus = document.getElementById('slotsStatus');
+        const slotList = document.getElementById('slotList');
         let db;
+        let auth;
+        let scheduleSlots = [];
 
         function setStatus(element, message, type = '') {
             element.textContent = message;
@@ -188,6 +249,174 @@
         function showError(error) {
             console.error(error);
             return error?.message || 'Something went wrong. Please try again.';
+        }
+
+        function serviceLabel(service) {
+            return service === 'massage' ? 'Massage therapy' : 'Reflexology';
+        }
+
+        function formatJerusalemTime(date) {
+            return new Intl.DateTimeFormat('en-IL', {
+                timeZone: 'Asia/Jerusalem',
+                dateStyle: 'full',
+                timeStyle: 'short'
+            }).format(date);
+        }
+
+        function toJerusalemTimestamp(value) {
+            const match = /^(\d{4})-(\d{2})-(\d{2})T(\d{2}):(\d{2})$/.exec(value);
+            if (!match) throw new Error('Choose a valid date and time.');
+            const parts = match.slice(1).map(Number);
+            const targetTime = Date.UTC(parts[0], parts[1] - 1, parts[2], parts[3], parts[4]);
+            const formatter = new Intl.DateTimeFormat('en-CA', {
+                timeZone: 'Asia/Jerusalem',
+                year: 'numeric',
+                month: '2-digit',
+                day: '2-digit',
+                hour: '2-digit',
+                minute: '2-digit',
+                hourCycle: 'h23'
+            });
+            const formattedParts = Object.fromEntries(formatter.formatToParts(new Date(targetTime))
+                .filter(part => part.type !== 'literal')
+                .map(part => [part.type, Number(part.value)]));
+            const representedTime = Date.UTC(
+                formattedParts.year,
+                formattedParts.month - 1,
+                formattedParts.day,
+                formattedParts.hour,
+                formattedParts.minute
+            );
+            const result = new Date(targetTime - (representedTime - targetTime));
+            const check = Object.fromEntries(formatter.formatToParts(result)
+                .filter(part => part.type !== 'literal')
+                .map(part => [part.type, Number(part.value)]));
+            if (parts[0] !== check.year || parts[1] !== check.month || parts[2] !== check.day
+                || parts[3] !== check.hour || parts[4] !== check.minute) {
+                throw new Error('That local time does not exist because of a daylight-saving time change. Please choose another time.');
+            }
+            return Timestamp.fromDate(result);
+        }
+
+        function createAppointmentCard(title, details, actionLabel, onAction, danger = false) {
+            const article = document.createElement('article');
+            article.className = 'appointment-item';
+            const copy = document.createElement('div');
+            const heading = document.createElement('strong');
+            heading.textContent = title;
+            copy.append(heading);
+            for (const detail of details) {
+                const line = document.createElement('p');
+                line.className = 'review-meta';
+                line.textContent = detail;
+                copy.append(line);
+            }
+            article.append(copy);
+            if (actionLabel) {
+                const button = document.createElement('button');
+                button.className = `button ${danger ? 'danger' : 'secondary'}`;
+                button.type = 'button';
+                button.textContent = actionLabel;
+                button.addEventListener('click', onAction);
+                article.append(button);
+            }
+            return article;
+        }
+
+        async function loadSchedule() {
+            setStatus(appointmentsStatus, 'Loading appointments…');
+            setStatus(slotsStatus, 'Loading available times…');
+            try {
+                const [slotSnapshot, appointmentSnapshot] = await Promise.all([
+                    getDocs(collection(db, 'appointment_slots')),
+                    getDocs(collection(db, 'appointments'))
+                ]);
+                scheduleSlots = slotSnapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+                const now = Date.now();
+                const bookings = appointmentSnapshot.docs
+                    .map(item => ({ id: item.id, ...item.data() }))
+                    .filter(item => item.status === 'booked' && item.startAt.toMillis() > now)
+                    .sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+                appointmentList.replaceChildren();
+                if (!bookings.length) {
+                    setStatus(appointmentsStatus, 'No upcoming appointments.');
+                } else {
+                    setStatus(appointmentsStatus, `${bookings.length} upcoming appointment${bookings.length === 1 ? '' : 's'}.`);
+                    for (const booking of bookings) {
+                        const cancelButton = async event => {
+                            const button = event.currentTarget;
+                            if (!window.confirm(`Cancel the ${serviceLabel(booking.service)} appointment for ${booking.name}? The time will become available again.`)) return;
+                            button.disabled = true;
+                            try {
+                                const bookingRef = doc(db, 'appointments', booking.id);
+                                const slotRef = doc(db, 'appointment_slots', booking.slotId);
+                                await runTransaction(db, async transaction => {
+                                    const [currentBooking, currentSlot] = await Promise.all([
+                                        transaction.get(bookingRef),
+                                        transaction.get(slotRef)
+                                    ]);
+                                    if (!currentBooking.exists() || currentBooking.data().status !== 'booked'
+                                        || !currentSlot.exists() || currentSlot.data().status !== 'booked') {
+                                        throw new Error('This appointment has already changed.');
+                                    }
+                                    transaction.update(bookingRef, { status: 'cancelled', cancelledAt: serverTimestamp() });
+                                    transaction.update(slotRef, { status: 'available', bookingId: deleteField() });
+                                });
+                                await loadSchedule();
+                            } catch (error) {
+                                setStatus(appointmentsStatus, showError(error), 'error');
+                                button.disabled = false;
+                            }
+                        };
+                        appointmentList.append(createAppointmentCard(
+                            `${serviceLabel(booking.service)} · ${booking.durationMinutes} minutes`,
+                            [
+                                formatJerusalemTime(booking.startAt.toDate()),
+                                `Client: ${booking.name}`,
+                                `Phone: ${booking.phone}`,
+                                booking.email ? `Email: ${booking.email}` : ''
+                            ].filter(Boolean),
+                            'Cancel appointment',
+                            cancelButton,
+                            true
+                        ));
+                    }
+                }
+
+                const available = scheduleSlots
+                    .filter(slot => slot.status === 'available' && slot.startAt.toMillis() > now)
+                    .sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+                slotList.replaceChildren();
+                if (!available.length) {
+                    setStatus(slotsStatus, 'No future available times.');
+                } else {
+                    setStatus(slotsStatus, `${available.length} available time${available.length === 1 ? '' : 's'}.`);
+                    for (const slot of available) {
+                        const deleteButton = async event => {
+                            const button = event.currentTarget;
+                            if (!window.confirm(`Remove this ${serviceLabel(slot.service)} time?`)) return;
+                            button.disabled = true;
+                            try {
+                                await deleteDoc(doc(db, 'appointment_slots', slot.id));
+                                await loadSchedule();
+                            } catch (error) {
+                                setStatus(slotsStatus, showError(error), 'error');
+                                button.disabled = false;
+                            }
+                        };
+                        slotList.append(createAppointmentCard(
+                            `${serviceLabel(slot.service)} · ${slot.durationMinutes} minutes`,
+                            [formatJerusalemTime(slot.startAt.toDate())],
+                            'Remove time',
+                            deleteButton,
+                            true
+                        ));
+                    }
+                }
+            } catch (error) {
+                setStatus(appointmentsStatus, showError(error), 'error');
+                setStatus(slotsStatus, showError(error), 'error');
+            }
         }
 
         function makeToken() {
@@ -319,7 +548,7 @@
             loginForm.querySelector('button[type="submit"]').disabled = true;
         } else {
             const app = initializeApp(firebaseConfig);
-            const auth = getAuth(app);
+            auth = getAuth(app);
             db = getFirestore(app);
 
             onAuthStateChanged(auth, async user => {
@@ -331,7 +560,7 @@
                 loginSection.hidden = Boolean(user);
                 dashboard.hidden = !user;
                 signOutButton.hidden = !user;
-                if (user) await loadTestimonials();
+                if (user) await Promise.all([loadTestimonials(), loadSchedule()]);
             });
 
             loginForm.addEventListener('submit', async event => {
@@ -350,6 +579,45 @@
 
             signOutButton.addEventListener('click', () => signOut(auth));
             document.getElementById('refreshButton').addEventListener('click', loadTestimonials);
+            document.getElementById('refreshAppointmentsButton').addEventListener('click', loadSchedule);
+
+            document.getElementById('slotForm').addEventListener('submit', async event => {
+                event.preventDefault();
+                const form = event.currentTarget;
+                const submitButton = form.querySelector('button[type="submit"]');
+                submitButton.disabled = true;
+                setStatus(slotFormStatus, 'Adding available time…');
+                try {
+                    const startAt = toJerusalemTimestamp(form.elements.startAt.value);
+                    const startMillis = startAt.toMillis();
+                    const durationMinutes = Number(form.elements.durationMinutes.value);
+                    if (startMillis <= Date.now()) throw new Error('Choose a future date and time.');
+                    const currentSlots = await getDocs(collection(db, 'appointment_slots'));
+                    scheduleSlots = currentSlots.docs.map(item => ({ id: item.id, ...item.data() }));
+                    const overlaps = scheduleSlots.some(slot => {
+                        if (!['available', 'booked'].includes(slot.status)) return false;
+                        const existingStart = slot.startAt.toMillis();
+                        const existingEnd = existingStart + slot.durationMinutes * 60_000;
+                        return startMillis < existingEnd && startMillis + durationMinutes * 60_000 > existingStart;
+                    });
+                    if (overlaps) throw new Error('This time overlaps another available or booked appointment.');
+                    await addDoc(collection(db, 'appointment_slots'), {
+                        service: form.elements.service.value,
+                        startAt,
+                        durationMinutes,
+                        status: 'available',
+                        createdAt: serverTimestamp(),
+                        createdBy: auth.currentUser.uid
+                    });
+                    form.reset();
+                    setStatus(slotFormStatus, 'Available time added.', 'success');
+                    await loadSchedule();
+                } catch (error) {
+                    setStatus(slotFormStatus, showError(error), 'error');
+                } finally {
+                    submitButton.disabled = false;
+                }
+            });
 
             document.getElementById('manualTestimonialForm').addEventListener('submit', async event => {
                 event.preventDefault();

@@ -1,0 +1,350 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex, nofollow">
+    <meta name="referrer" content="no-referrer">
+    <title>Book a Massage or Reflexology Session | Shoshana Billyack</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Marcellus&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            color-scheme: light;
+            --ink: #253238;
+            --muted: #69777b;
+            --rose: #963e58;
+            --rose-dark: #743248;
+            --rose-pale: #f8edef;
+            --paper: #fbf8f5;
+            --line: #e8e1de;
+            --white: #fff;
+            --error: #a33333;
+            --success: #287254;
+        }
+        * { box-sizing: border-box; }
+        body { margin: 0; min-height: 100vh; background: var(--paper); color: var(--ink); font: 16px/1.65 'Plus Jakarta Sans', sans-serif; }
+        header { padding: 1.1rem max(1.25rem, calc((100vw - 760px) / 2)); background: var(--white); border-bottom: 1px solid var(--line); }
+        header a { color: var(--rose-dark); font: 1.2rem 'Marcellus', serif; text-decoration: none; }
+        main { width: min(760px, calc(100% - 2rem)); margin: 3rem auto 5rem; }
+        h1, h2 { font-family: 'Marcellus', serif; font-weight: 400; line-height: 1.2; }
+        h1 { margin: 0 0 .6rem; font-size: clamp(2rem, 5vw, 3rem); }
+        h2 { margin: 0; font-size: 1.5rem; }
+        p { color: var(--muted); }
+        .panel { margin-top: 1.25rem; padding: clamp(1.25rem, 4vw, 2rem); background: var(--white); border: 1px solid var(--line); border-radius: 10px; }
+        .field { display: grid; gap: .4rem; margin: 1rem 0; }
+        label { font-size: .88rem; font-weight: 700; }
+        input, select { width: 100%; min-height: 48px; padding: .7rem .8rem; border: 1px solid #d9d1ce; border-radius: 5px; background: var(--white); color: var(--ink); font: inherit; }
+        input:focus, select:focus, button:focus-visible, a:focus-visible { outline: 3px solid #963e5840; outline-offset: 2px; }
+        .button { display: inline-flex; align-items: center; justify-content: center; min-height: 46px; padding: .7rem 1rem; border: 1px solid transparent; border-radius: 5px; background: var(--rose); color: var(--white); font: 600 1rem 'Plus Jakarta Sans', sans-serif; text-decoration: none; cursor: pointer; }
+        .button:hover { background: var(--rose-dark); }
+        .button.secondary { background: var(--white); border-color: var(--line); color: var(--ink); }
+        .button:disabled { cursor: wait; opacity: .65; }
+        .button-row { display: flex; flex-wrap: wrap; gap: .7rem; margin-top: 1.2rem; }
+        .status { min-height: 1.5rem; margin: .7rem 0 0; color: var(--muted); }
+        .status.error { color: var(--error); }
+        .status.success { color: var(--success); }
+        .notice { padding: .85rem 1rem; background: var(--rose-pale); border-radius: 5px; font-size: .9rem; }
+        .notice a { color: var(--rose-dark); font-weight: 700; }
+        .check { display: flex; align-items: flex-start; gap: .65rem; margin-top: 1rem; font-size: .9rem; }
+        .check input { width: 1.1rem; min-height: 1.1rem; margin-top: .25rem; accent-color: var(--rose); }
+        [hidden] { display: none !important; }
+        @media (max-width: 520px) { main { margin-top: 2rem; } }
+    </style>
+</head>
+<body>
+    <header><a href="index.html">Shoshana Billyack · Wellness &amp; Doula Care</a></header>
+    <main>
+        <h1>Book a session</h1>
+        <p>Choose an available massage or reflexology appointment in Ramat Beit Shemesh. Doula care is arranged directly by WhatsApp.</p>
+
+        <section id="bookingPanel" class="panel" aria-labelledby="bookingHeading">
+            <h2 id="bookingHeading">Choose your appointment</h2>
+            <div class="field">
+                <label for="service">Service</label>
+                <select id="service" required>
+                    <option value="massage">Massage therapy</option>
+                    <option value="reflexology">Reflexology</option>
+                </select>
+            </div>
+            <div class="field">
+                <label for="location">Appointment area</label>
+                <select id="location" required>
+                    <option value="rbs">Ramat Beit Shemesh</option>
+                    <option value="outside">Outside Ramat Beit Shemesh</option>
+                </select>
+            </div>
+            <div id="outsideNotice" class="notice" hidden>
+                For appointments outside Ramat Beit Shemesh, please
+                <a id="outsideWhatsApp" href="https://api.whatsapp.com/send?phone=972542423787">contact Shoshana on WhatsApp</a>
+                to discuss arrangements.
+            </div>
+            <form id="bookingForm">
+                <div class="field">
+                    <label for="slot">Available date and time (Israel time)</label>
+                    <select id="slot" name="slotId" required>
+                        <option value="">Loading available times…</option>
+                    </select>
+                </div>
+                <div class="field">
+                    <label for="name">Name</label>
+                    <input id="name" name="name" type="text" maxlength="100" autocomplete="name" required>
+                </div>
+                <div class="field">
+                    <label for="phone">Phone number</label>
+                    <input id="phone" name="phone" type="tel" maxlength="30" autocomplete="tel" required>
+                </div>
+                <div class="field">
+                    <label for="email">Email <span>(optional)</span></label>
+                    <input id="email" name="email" type="email" maxlength="254" autocomplete="email">
+                </div>
+                <p class="notice">Please do not enter health details here. Shoshana will discuss any health questions or allergies with you privately.</p>
+                <label class="check">
+                    <input id="privacyConsent" type="checkbox" required>
+                    <span>I agree that my contact and appointment details will be used to arrange and manage this booking. I will not submit health information through this form.</span>
+                </label>
+                <div class="button-row">
+                    <button class="button" id="bookButton" type="submit">Confirm booking</button>
+                    <a class="button secondary" href="index.html#contact">Ask a question</a>
+                </div>
+                <p class="status" id="bookingStatus" role="status" aria-live="polite"></p>
+            </form>
+        </section>
+
+        <section id="confirmationPanel" class="panel" aria-labelledby="confirmationHeading" hidden>
+            <h2 id="confirmationHeading">Your appointment is confirmed</h2>
+            <p id="confirmationDetails"></p>
+            <p>A cancellation link is provided below. You can cancel online until 24 hours before your appointment. For changes or cancellations within 24 hours, please contact Shoshana directly.</p>
+            <p class="notice">Keep this private cancellation link safe; anyone with the link can cancel this appointment.</p>
+            <div class="button-row">
+                <a class="button" id="cancelLink" href="#">Manage cancellation</a>
+                <a class="button secondary" href="index.html">Return to the website</a>
+            </div>
+        </section>
+
+        <section id="cancellationPanel" class="panel" aria-labelledby="cancellationHeading" hidden>
+            <h2 id="cancellationHeading">Cancel your appointment</h2>
+            <p>Online cancellation is available until 24 hours before the appointment. This action cannot be undone.</p>
+            <p class="notice">For changes or cancellations within 24 hours, <a href="https://api.whatsapp.com/send?phone=972542423787">contact Shoshana on WhatsApp</a>.</p>
+            <button class="button" id="cancelButton" type="button">Cancel appointment</button>
+            <p class="status" id="cancellationStatus" role="status" aria-live="polite"></p>
+        </section>
+    </main>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-app.js';
+        import {
+            collection,
+            deleteField,
+            doc,
+            getDocs,
+            getFirestore,
+            query,
+            serverTimestamp,
+            where,
+            writeBatch,
+            runTransaction
+        } from 'https://www.gstatic.com/firebasejs/13.0.0/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: 'AIzaSyA9w_-Omp4W3k1c8syqaCn6LiS29RvFyT0',
+            authDomain: 'billyack-com.firebaseapp.com',
+            projectId: 'billyack-com',
+            storageBucket: 'billyack-com.firebasestorage.app',
+            messagingSenderId: '979011586766',
+            appId: '1:979011586766:web:42fba76069380bd0309e9f',
+            measurementId: 'G-CTC6GPPNQ6'
+        };
+        const db = getFirestore(initializeApp(firebaseConfig));
+        const bookingForm = document.getElementById('bookingForm');
+        const bookingStatus = document.getElementById('bookingStatus');
+        const slotSelect = document.getElementById('slot');
+        const serviceSelect = document.getElementById('service');
+        const locationSelect = document.getElementById('location');
+        const pageParams = new URLSearchParams(window.location.search);
+        const requestedService = pageParams.get('service');
+        if (requestedService === 'massage' || requestedService === 'reflexology') {
+            serviceSelect.value = requestedService;
+        }
+        const cancellationParams = pageParams;
+        const cancellationId = cancellationParams.get('cancel');
+        const cancellationToken = cancellationParams.get('token');
+        const cancellationSlotId = cancellationParams.get('slot');
+        let availableSlots = [];
+
+        function setStatus(element, message, type = '') {
+            element.textContent = message;
+            element.className = `status ${type}`.trim();
+        }
+
+        function makeToken() {
+            return Array.from(crypto.getRandomValues(new Uint8Array(32)), byte => byte.toString(16).padStart(2, '0')).join('');
+        }
+
+        function formatJerusalemTime(date) {
+            return new Intl.DateTimeFormat('en-IL', {
+                timeZone: 'Asia/Jerusalem',
+                dateStyle: 'full',
+                timeStyle: 'short'
+            }).format(date);
+        }
+
+        function updateSlots() {
+            const service = serviceSelect.value;
+            const now = Date.now();
+            const filtered = availableSlots
+                .filter(slot => slot.service === service && slot.startAt.toMillis() > now)
+                .sort((a, b) => a.startAt.toMillis() - b.startAt.toMillis());
+            slotSelect.replaceChildren();
+            const placeholder = document.createElement('option');
+            placeholder.value = '';
+            placeholder.textContent = filtered.length ? 'Choose a time' : 'No times currently available';
+            slotSelect.append(placeholder);
+            for (const slot of filtered) {
+                const option = document.createElement('option');
+                option.value = slot.id;
+                option.textContent = `${formatJerusalemTime(slot.startAt.toDate())} · ${slot.durationMinutes} minutes`;
+                slotSelect.append(option);
+            }
+            slotSelect.disabled = filtered.length === 0;
+            document.getElementById('bookButton').disabled = filtered.length === 0;
+        }
+
+        async function loadSlots() {
+            setStatus(bookingStatus, 'Loading available times…');
+            try {
+                const snapshot = await getDocs(query(
+                    collection(db, 'appointment_slots'),
+                    where('status', '==', 'available')
+                ));
+                availableSlots = snapshot.docs.map(item => ({ id: item.id, ...item.data() }));
+                updateSlots();
+                setStatus(bookingStatus, availableSlots.some(slot => slot.startAt.toMillis() > Date.now())
+                    ? ''
+                    : 'No appointments are currently listed. Please check back or contact Shoshana on WhatsApp.');
+            } catch (error) {
+                console.error('Unable to load appointment slots:', error);
+                setStatus(bookingStatus, 'Available times could not be loaded. Please try again later or contact Shoshana.', 'error');
+            }
+        }
+
+        function updateArea() {
+            const outside = locationSelect.value === 'outside';
+            document.getElementById('outsideNotice').hidden = !outside;
+            bookingForm.hidden = outside;
+            if (outside) setStatus(bookingStatus, '');
+        }
+
+        serviceSelect.addEventListener('change', updateSlots);
+        locationSelect.addEventListener('change', updateArea);
+
+        if (cancellationId && cancellationToken && cancellationSlotId) {
+            document.getElementById('bookingPanel').hidden = true;
+            document.getElementById('cancellationPanel').hidden = false;
+            document.getElementById('cancelButton').addEventListener('click', async event => {
+                const button = event.currentTarget;
+                button.disabled = true;
+                const status = document.getElementById('cancellationStatus');
+                setStatus(status, 'Cancelling appointment…');
+                try {
+                    const bookingRef = doc(db, 'appointments', cancellationId);
+                    const batch = writeBatch(db);
+                    batch.update(bookingRef, {
+                        cancelToken: cancellationToken,
+                        status: 'cancelled',
+                        cancelledAt: serverTimestamp()
+                    });
+                    const slotRef = doc(db, 'appointment_slots', cancellationSlotId);
+                    batch.update(slotRef, {
+                        status: 'available',
+                        bookingId: deleteField()
+                    });
+                    await batch.commit();
+                    setStatus(status, 'Your appointment has been cancelled. The time is now available for another client.', 'success');
+                    button.hidden = true;
+                } catch (error) {
+                    console.error('Unable to cancel appointment:', error);
+                    setStatus(status, 'This cancellation link may be invalid, expired, or less than 24 hours before the appointment. For help, please contact Shoshana on WhatsApp.', 'error');
+                    button.disabled = false;
+                }
+            });
+        } else if (cancellationId || cancellationToken || cancellationSlotId) {
+            document.getElementById('bookingPanel').hidden = true;
+            document.getElementById('cancellationPanel').hidden = false;
+            document.getElementById('cancelButton').hidden = true;
+            setStatus(document.getElementById('cancellationStatus'), 'This cancellation link is incomplete. Please contact Shoshana for help.', 'error');
+        } else {
+            await loadSlots();
+        }
+
+        bookingForm.addEventListener('submit', async event => {
+            event.preventDefault();
+            const button = document.getElementById('bookButton');
+            button.disabled = true;
+            setStatus(bookingStatus, 'Confirming your appointment…');
+            const slotId = slotSelect.value;
+            const slot = availableSlots.find(item => item.id === slotId);
+            if (!slot || slot.service !== serviceSelect.value || slot.startAt.toMillis() <= Date.now()) {
+                button.disabled = false;
+                await loadSlots();
+                setStatus(bookingStatus, 'That time is no longer available. Please choose another time.', 'error');
+                return;
+            }
+
+            const bookingId = doc(collection(db, 'appointments')).id;
+            const cancelToken = makeToken();
+            const appointmentRef = doc(db, 'appointments', bookingId);
+            const slotRef = doc(db, 'appointment_slots', slotId);
+            const formData = new FormData(bookingForm);
+            try {
+                await runTransaction(db, async transaction => {
+                    const currentSlot = await transaction.get(slotRef);
+                    if (!currentSlot.exists()
+                        || currentSlot.data().status !== 'available'
+                        || currentSlot.data().service !== serviceSelect.value
+                        || currentSlot.data().startAt.toMillis() <= Date.now()) {
+                        throw new Error('That time has just been booked. Please choose another available time.');
+                    }
+                    transaction.update(slotRef, { status: 'booked', bookingId });
+                    transaction.set(appointmentRef, {
+                        slotId,
+                        service: currentSlot.data().service,
+                        durationMinutes: currentSlot.data().durationMinutes,
+                        startAt: currentSlot.data().startAt,
+                        name: formData.get('name').trim(),
+                        phone: formData.get('phone').trim(),
+                        email: formData.get('email').trim(),
+                        status: 'booked',
+                        cancelToken,
+                        createdAt: serverTimestamp()
+                    });
+                });
+                document.getElementById('bookingPanel').hidden = true;
+                const confirmationPanel = document.getElementById('confirmationPanel');
+                confirmationPanel.hidden = false;
+                document.getElementById('confirmationDetails').textContent =
+                    `${slot.service === 'massage' ? 'Massage therapy' : 'Reflexology'} · ${slot.durationMinutes} minutes · ${formatJerusalemTime(slot.startAt.toDate())}`;
+                const cancelUrl = new URL('booking.html', window.location.href);
+                cancelUrl.searchParams.set('cancel', bookingId);
+                cancelUrl.searchParams.set('token', cancelToken);
+                cancelUrl.searchParams.set('slot', slotId);
+                document.getElementById('cancelLink').href = cancelUrl.href;
+                confirmationPanel.scrollIntoView({ behavior: 'smooth' });
+            } catch (error) {
+                console.error('Unable to create booking:', error);
+                const message = error.message.includes('just been booked')
+                    ? error.message
+                    : 'Your booking could not be confirmed. Please try another time or contact Shoshana.';
+                button.disabled = false;
+                await loadSlots();
+                setStatus(bookingStatus, message, 'error');
+            }
+        });
+
+        const outsideWhatsApp = document.getElementById('outsideWhatsApp');
+        outsideWhatsApp.href = `https://api.whatsapp.com/send?phone=972542423787&text=${encodeURIComponent('Hi Shoshana, I am outside Ramat Beit Shemesh and would like to ask about an appointment.')}`;
+        updateArea();
+    </script>
+</body>
+</html>

@@ -6,6 +6,40 @@ service cloud.firestore {
         && request.auth.uid == 'aQjoKCcFMdhF3WTBen6odlP9lYw1';
     }
 
+    function validAppointmentService(service) {
+      return service in ['massage', 'reflexology'];
+    }
+
+    function validAppointmentDuration(durationMinutes) {
+      return durationMinutes in [30, 45, 60, 75, 90];
+    }
+
+    function isValidPublicBooking(slotId, appointmentId) {
+      let slot = get(/databases/$(database)/documents/appointment_slots/$(slotId)).data;
+      let slotAfter = getAfter(/databases/$(database)/documents/appointment_slots/$(slotId)).data;
+      return slot.status == 'available'
+        && slot.startAt > request.time
+        && slotAfter.status == 'booked'
+        && slotAfter.bookingId == appointmentId
+        && slot.service == request.resource.data.service
+        && slot.durationMinutes == request.resource.data.durationMinutes
+        && slot.startAt == request.resource.data.startAt;
+    }
+
+    function isValidPublicCancellation(appointmentId) {
+      let slotId = resource.data.slotId;
+      let slotAfter = getAfter(/databases/$(database)/documents/appointment_slots/$(slotId)).data;
+      return resource.data.status == 'booked'
+        && request.resource.data.status == 'cancelled'
+        && request.resource.data.cancelToken == resource.data.cancelToken
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledAt'])
+        && request.resource.data.cancelledAt == request.time
+        && request.time + duration.value(24, 'h') <= resource.data.startAt
+        && slotAfter.status == 'available'
+        && !slotAfter.keys().hasAny(['bookingId'])
+        && slotAfter.diff(get(/databases/$(database)/documents/appointment_slots/$(slotId)).data).affectedKeys().hasOnly(['status', 'bookingId']);
+    }
+
     match /testimonials/{testimonialId} {
       allow get, list: if true;
       allow update: if isAdmin()
@@ -62,6 +96,72 @@ service cloud.firestore {
         && existsAfter(/databases/$(database)/documents/testimonials/$(request.resource.data.submittedReviewId))
         && getAfter(/databases/$(database)/documents/testimonials/$(request.resource.data.submittedReviewId)).data.reviewTokenId == tokenId;
       allow delete: if isAdmin();
+    }
+
+    match /appointment_slots/{slotId} {
+      allow get, list: if isAdmin() || resource.data.status == 'available';
+      allow create: if isAdmin()
+        && request.resource.data.keys().hasOnly([
+          'service', 'startAt', 'durationMinutes', 'status', 'createdAt', 'createdBy'
+        ])
+        && validAppointmentService(request.resource.data.service)
+        && validAppointmentDuration(request.resource.data.durationMinutes)
+        && request.resource.data.startAt > request.time
+        && request.resource.data.status == 'available'
+        && request.resource.data.createdAt == request.time
+        && request.resource.data.createdBy == request.auth.uid;
+      allow update: if isAdmin()
+        || (
+          resource.data.status == 'available'
+          && request.resource.data.status == 'booked'
+          && request.resource.data.bookingId is string
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'bookingId'])
+          && getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.bookingId)).data.slotId == slotId
+          && getAfter(/databases/$(database)/documents/appointments/$(request.resource.data.bookingId)).data.status == 'booked'
+        )
+        || (
+          resource.data.status == 'booked'
+          && request.resource.data.status == 'available'
+          && !request.resource.data.keys().hasAny(['bookingId'])
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'bookingId'])
+          && getAfter(/databases/$(database)/documents/appointments/$(resource.data.bookingId)).data.status == 'cancelled'
+          && getAfter(/databases/$(database)/documents/appointments/$(resource.data.bookingId)).data.slotId == slotId
+        );
+      allow delete: if isAdmin() && resource.data.status == 'available';
+    }
+
+    match /appointments/{appointmentId} {
+      allow get, list: if isAdmin();
+      allow create: if request.resource.data.keys().hasOnly([
+          'slotId', 'service', 'durationMinutes', 'startAt', 'name', 'phone',
+          'email', 'status', 'cancelToken', 'createdAt'
+        ])
+        && request.resource.data.slotId is string
+        && validAppointmentService(request.resource.data.service)
+        && validAppointmentDuration(request.resource.data.durationMinutes)
+        && request.resource.data.startAt is timestamp
+        && request.resource.data.name is string
+        && request.resource.data.name.size() > 0
+        && request.resource.data.name.size() <= 100
+        && request.resource.data.phone is string
+        && request.resource.data.phone.size() > 0
+        && request.resource.data.phone.size() <= 30
+        && request.resource.data.email is string
+        && request.resource.data.email.size() <= 254
+        && request.resource.data.status == 'booked'
+        && request.resource.data.cancelToken is string
+        && request.resource.data.cancelToken.size() == 64
+        && request.resource.data.createdAt == request.time
+        && isValidPublicBooking(request.resource.data.slotId, appointmentId);
+      allow update: if (
+          isAdmin()
+          && resource.data.status == 'booked'
+          && request.resource.data.status == 'cancelled'
+          && request.resource.data.cancelledAt == request.time
+          && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'cancelledAt'])
+          && getAfter(/databases/$(database)/documents/appointment_slots/$(resource.data.slotId)).data.status == 'available'
+        ) || isValidPublicCancellation(appointmentId);
+      allow delete: if false;
     }
   }
 }
